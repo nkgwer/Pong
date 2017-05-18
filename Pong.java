@@ -1,6 +1,7 @@
-import java.awt.*;
+﻿import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+// adkla
 
 public class Pong extends JFrame {
     Graphics g;
