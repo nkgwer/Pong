@@ -45,47 +45,64 @@ public class PongServer {
         // サーバーソケットの作成
         ps.startServer(args, ps.Number - 1);
 
-        try {
-            ps.sf.label.setText("対戦相手を受付中...");
-            while (ps.sConnector.getNumberOfSocket() < ps.Number - 1) {
-                Thread.sleep(10);
-            }
-            System.out.println("あと" + 0 + "人");
-            ps.sf.isAccept = false;
-            ps.sf.label.setText("ゲームの準備中...");
-
-            String[] str = new String[ps.Number - 1];
-            int i;
-
+        ps.sf.label.setText("対戦相手を受付中...");
+        while (ps.sConnector.getNumberOfSocket() < ps.Number - 1) {
             try {
-                for (i = 0; i < ps.Number - 1; i++) {
+                Thread.sleep(10);
+            } catch (InterruptedException ire) {
+                // Do Nothing.
+            }
+        }
+        ps.sf.isAccept = false;
+        System.out.println("あと" + 0 + "人");
+        ps.sf.label.setText("ゲームの準備中...");
+        ps.sf.logAppendln("ゲームの準備中...");
 
-                }
-                ps.sf.logAppendln("ゲームの準備中...");
-                for (i = 0; i < ps.Number - 1; i++) {
-                    ps.pongSender[i].send(ps.Number.toString());
-                }
-                Thread.sleep(1000);
-                for (i = 0; i < ps.Number - 1; i++) {
-                    ps.pongSender[i].send("Close Start Frame");
-                }
+        int i;
 
-                ps.gf = new GameFrameS();
-                System.out.println("Closing: スタート画面");
-                ps.sf.setVisible(false);
-                System.out.println("Opening: ゲーム画面");
-                ps.gf.setVisible(true);
+        for (i = 0; i < ps.Number - 1; i++) {
+            ps.pongSender[i].send("Number of Player:");
+            ps.pongSender[i].send(ps.Number.toString());
+        }
 
-                // スタートボタンが押されて無効になるまで待つ
-                while (ps.gf.btn.isEnabled()) {
-                    Thread.sleep(10);
-                }
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ire) {
+            // Do Nothing.
+        }
+
+        for (i = 0; i < ps.Number - 1; i++) {
+            ps.pongSender[i].send("Close Start Frame");
+        }
+
+        ps.gf = new GameFrameS();
+        System.out.println("Closing: スタート画面");
+        ps.sf.setVisible(false);
+        System.out.println("Opening: ゲーム画面");
+        ps.gf.setVisible(true);
+
+        // スタートボタンが押されて無効になるまで待つ
+        while (ps.gf.btn.isEnabled()) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException ire) {
+                // Do Nothing.
+            }
+        }
+
+        try {
+            try {
+                String[] str = new String[ps.Number - 1];
                 while (true) {
                     int x = 0, vx = 0, vy = 0;
 
                     // ボールが自分のフィールドから出ない間待つ。
                     while (ps.gf.isBallHere) {
-                        Thread.sleep(10);
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException ire) {
+                            // Do Nothing.
+                        }
                     }
 
                     x = ps.gf.ball.x;
@@ -173,7 +190,6 @@ public class PongServer {
         } catch (IOException ioe) {
             String msg = "ポートの確保に失敗しました。";
             System.out.println(msg);
-
             return;
         }
         this.socket = new Socket[n];
@@ -181,7 +197,6 @@ public class PongServer {
         this.pongSender = new PongSender[n];
         Thread thread = new Thread(this.sConnector);
         thread.start();
-
 
         this.sf.isAccept = true;
     }
@@ -208,10 +223,10 @@ public class PongServer {
     }
 
     public synchronized void terminateConnection (int i) {
-        try {
-            this.socket[i].close();
-        } catch (IOException ioe) {
-            // Do Nothing.
+        this.closeSocketStream(i);
+
+        if (this.sConnector != null) {
+            this.sConnector.transNumberOfSocket(-1);
         }
     }
 
@@ -226,17 +241,20 @@ public class PongServer {
     private void closeSocketStream(int i) {
         if (this.pongSender[i] != null) {
             this.pongSender[i].send("END");
+            System.out.println("Closing : Sender[" + i + "] = " + this.pongSender[i]);
             this.pongSender[i].terminate();
             this.pongSender[i] = null;
         }
 
         if (this.pongReceiver[i] != null) {
+            System.out.println("Closing : Receiver[" + i + "] = " + this.pongReceiver[i]);
             this.pongReceiver[i].terminate();
             this.pongReceiver[i] = null;
         }
 
         if (this.socket[i] != null) {
             try {
+                System.out.println("Closing : socket[" + i + "] = " + this.socket[i]);
                 this.socket[i].close();
                 this.sConnector.transNumberOfSocket(-1);
             } catch (IOException ioe) {
@@ -262,7 +280,7 @@ public class PongServer {
             }
             this.socket[i] = nsocket;
             this.pongReceiver[i] = PongReceiver.createReceiver(this, nsocket, i); // 受信の設定
-            this.pongSender[i] = PongSender.createSender(this, nsocket); // 送信の設定
+            this.pongSender[i] = PongSender.createSender(this, nsocket, i); // 送信の設定
         } catch (IOException ioe) {
             this.socket[i] = null;
             this.pongReceiver[i] = null;
@@ -272,12 +290,12 @@ public class PongServer {
             return false;
         }
 
+        Thread thread = new Thread(this.pongReceiver[i]);
+        thread.start();
+
         // 受信中に設定
         this.sConnector.setReceivedNow(true);
         this.sConnector.transNumberOfSocket(1);
-
-        Thread thread = new Thread(this.pongReceiver[i]);
-        thread.start();
 
         return true;
     }
@@ -545,11 +563,9 @@ class GameFrameS extends JFrame implements ActionListener {
 /* 受信用クラス */
 final class PongReceiver implements Runnable {
     private PongServer ps;
-
     private BufferedReader bfr;
     private boolean isReading;
     private int i;
-    PrintWriter out;
 
     private PongReceiver (PongServer nps, BufferedReader nbfr, int ni) {
         this.ps = nps;
@@ -560,10 +576,12 @@ final class PongReceiver implements Runnable {
 
     public static PongReceiver createReceiver(PongServer s, Socket socket, int i)
     throws IOException {
+        InputStream inputStream = socket.getInputStream();
         BufferedReader in = new BufferedReader(
-            new InputStreamReader(socket.getInputStream())); // データ受信用バッファの設定
+            new InputStreamReader(inputStream)); // データ受信用バッファの設定
         PongReceiver pongReceiver = new PongReceiver(s, in, i);
-        System.out.println("受信用バッファ設定完了: " + socket);
+        System.out.println("Complete setting : Receiver[" + i + "] = " + pongReceiver);
+        System.out.println("Complete setting : Receiving Buffer[" + i + "] = " + in);
         return pongReceiver;
     }
 
@@ -580,7 +598,9 @@ final class PongReceiver implements Runnable {
             try {
                 line = this.bfr.readLine(); // データの受信
                 System.out.println("受信: \"" + line/* + "\" from " + socket.getRemoteSocketAddress()*/);
-            } catch (IOException ie) {
+            } catch (IOException ioe) {
+                // 異常終了
+                ioe.printStackTrace();
                 this.ps.terminateConnection(i);
                 break;
             }
@@ -602,7 +622,7 @@ final class PongReceiver implements Runnable {
         // 終了処理
         if (this.bfr != null) {
             try {
-                System.out.println("closing..." + this.bfr);
+                System.out.println("Closing : Receiving Buffer[" + this.i + "] = " + this.bfr);
                 this.bfr.close();
             } catch (IOException ioe) {
                 // Do nothing.
