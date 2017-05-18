@@ -1,5 +1,3 @@
-package work.java.pong;
-
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketTimeoutException;

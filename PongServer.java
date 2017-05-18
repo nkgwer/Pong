@@ -1,5 +1,3 @@
-package work.java.pong;
-
 import java.util.StringTokenizer;
 import java.io.*;
 import java.net.*;

@@ -1,5 +1,3 @@
-package work.java.pong;
-
 import java.awt.Dimension;
 import java.awt.Rectangle;
 
