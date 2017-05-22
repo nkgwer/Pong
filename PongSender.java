@@ -1,30 +1,20 @@
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 
 /* 送信用クラス */
-public final class PongSender {
-    private PongServer ps;
-    private Socket s;
+public class PongSender {
+    private Socket socket;
     private BufferedWriter bfw;
     private int i;
+    private PrintWriter out;
 
-    private PongSender (PongServer nps, Socket ns, BufferedWriter nbfw, int ni) {
-        this.ps = nps;
-        this.s = ns;
+    protected PongSender (Socket ns, BufferedWriter nbfw, int ni) {
+        this.socket = ns;
         this.bfw = nbfw;
         this.i = ni;
-    }
-
-    public static PongSender createSender(PongServer ps, Socket socket, int i)
-    throws IOException {
-        OutputStreamWriter osw = new OutputStreamWriter(socket.getOutputStream());
-        BufferedWriter bfw = new BufferedWriter(osw); // データ送信用バッファの設定
-
-        PongSender pongSender = new PongSender(ps, socket, bfw, i);
-        System.out.println("Complete setting : Sender[" + i + "] = " + pongSender);
-        System.out.println("Complete setting : Sending Buffered Writer[" + i + "] = " + bfw);
-        return pongSender;
+        this.out = new PrintWriter(this.bfw, true);
     }
 
     public boolean send(String string) {
@@ -34,10 +24,8 @@ public final class PongSender {
 
         boolean isNormalWork = true;
 
-        System.out.println("送信: \"" + string + "\" to " + this.s.getRemoteSocketAddress());
-        PrintWriter out = new PrintWriter(this.bfw, true);
+        System.out.println("Send: \"" + string + "\" to " + this.socket.getRemoteSocketAddress());
         out.println(string); // データの送信
-        out.close();
 
         return isNormalWork;
     }
@@ -48,7 +36,11 @@ public final class PongSender {
             return;
         }
         try {
-            System.out.println("Closing : Sending Buffered Writer[" + i + "] = " + this.bfw);
+            if (this instanceof PongSenderC) {
+                System.out.println("Closing : Sending Buffered Writer[] = " + this.bfw);
+            } else {
+                System.out.println("Closing : Sending Buffered Writer[" + i + "] = " + this.bfw);
+            }
             this.bfw.close();
         } catch (IOException ioe) {
             // Do Nothing.

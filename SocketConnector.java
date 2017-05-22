@@ -48,7 +48,7 @@ public final class SocketConnector implements Runnable {
 
 		// サーバーソケットsを閉じる
 		try {
-			System.out.println("Closing: " + this.s);
+			System.out.println("Closing serversocket: " + this.s);
 			this.s.close();
 		} catch (IOException ioe) {
 			// Do Nothing.
@@ -74,10 +74,9 @@ public final class SocketConnector implements Runnable {
 	public synchronized void transNumberOfSocket(int n) {
 		if (n == -1) {
 			this.socketNumber--;
-			if (this.socketNumber < 0) this.isReceivedNow = false;
-		}
-		else if (n == 1) this.socketNumber++;
-	}	
+			if (this.socketNumber <= 0) this.setReceivedNow(false);
+		} else if (n == 1) this.socketNumber++;
+	}
 
 	public synchronized void terminate() {
 		this.isTermination = true;
@@ -106,7 +105,7 @@ public final class SocketConnector implements Runnable {
 		}
 
 		if ((cSocket != null) && (this.getNumberOfSocket() >= this.MAX_SOCKET_NUMBER)) {
-			System.err.println("接続数が上限に達しているため, 接続できません。");
+			System.err.println("Cannot connect: Connecting socket is Full.");
 			cSocket = null;
 		}
 		return cSocket;
