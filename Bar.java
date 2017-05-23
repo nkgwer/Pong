@@ -16,6 +16,7 @@ public class Bar extends Rectangle {
 	}
 
 	public void setV (int nwidth, int nheight) {
+
 		v.width = nwidth;
 		v.height = nheight;
 	}
@@ -47,6 +48,7 @@ public class Bar extends Rectangle {
 	// 次の時間でのバーの位置
 	public Bar Next() {
 		return new Bar(x + v.width, y + v.height, width, height);
+		
 	}
 
 	public void BoundX() {

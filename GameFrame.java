@@ -83,8 +83,9 @@ public class GameFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 // barの動く方向の設定
                 bar.setVX(0);
-                if (left && !right) bar.setVX(-BAR_V);
-                if (right && !left) bar.setVX(BAR_V);
+
+                if (left && !right && bar.getX() >= 0) bar.setVX(-BAR_V);
+                else if (right && !left && bar.getX() <= 300) bar.setVX(BAR_V);
                 
                 if (isBallHere) {
                     isBallHere = !isCeiling(ball);
