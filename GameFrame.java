@@ -111,7 +111,10 @@ public class GameFrame extends JFrame {
 
     public synchronized void paint(Graphics g) {
         // 描画
-        g.clearRect(0, 0, FRAME_SIZE.width, FRAME_SIZE.height);
+        g.setColor(new Color(255,255,255,40));
+        g.fillRect(0, 0, FRAME_SIZE.width, FRAME_SIZE.height);
+
+        //g.clearRect(0, 0, FRAME_SIZE.width, FRAME_SIZE.height);
         if (isBallHere) {
             g.setColor(Color.RED);
             g.fillOval(ball.x, ball.y, ball.width, ball.height);
