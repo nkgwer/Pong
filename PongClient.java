@@ -4,7 +4,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public class PongClient implements Runnable{
+public class PongClient implements Runnable {
 	StartFrameC sFrameC;
 	GameFrameC gFrameC;
 	String userName, hostName, sPlayerName;
@@ -40,6 +40,43 @@ public class PongClient implements Runnable{
 				// Do Nothing.
 			}
 		}
+
+		while (this.isGameFrame) {
+			// ボールが自分のフィールドに来るまで待つ。
+			while (!this.gFrameC.isBallHere) {
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException ire) {
+					// Do Nothing.
+				}
+			}
+
+			// ボールが自分のフィールドから出ない間待つ。
+			while (this.gFrameC.isBallHere) {
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException ire) {
+					// Do Nothing.
+				}
+			}
+
+			// サーバーに、上に行ったボールの位置と速度を送信する。
+			this.pongSender.send(this.gFrameC.ball.x + " " + this.gFrameC.ball.getVX() + " " + this.gFrameC.ball.getVY());
+		}
+
+		this.pongSender.send("END");
+
+		try {
+			if (this.socket != null) {
+				System.out.println("closing...");
+				this.socket.close();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.out.println("Closed: " + this.socket.getRemoteSocketAddress());
+		// this.sf.setVisible(false);
+		// System.exit(0);
 	}
 
 
