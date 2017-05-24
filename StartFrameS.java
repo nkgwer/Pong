@@ -64,7 +64,10 @@ public class StartFrameS extends StartFrame implements ActionListener {
     // ボタンが押されたときの動作
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
-        this.textField2.setEnabled(false); 
-        this.upperLabel.setText("Waiting for players...");
+        Object obj = e.getSource();
+        if (obj == this.btn) {
+            this.textField2.setEnabled(false);
+            this.upperLabel.setText("Waiting for players...");
+        }
     }
 }
