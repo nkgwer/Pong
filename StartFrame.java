@@ -2,6 +2,9 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.JButton;
@@ -12,7 +15,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-// スタート画面用クラス   
+// スタート画面用クラス
 public class StartFrame extends JFrame implements ActionListener {
     /* スタート画面のタイトル */
     private static final String FRAME_TITLE = "Pong!";
@@ -29,6 +32,12 @@ public class StartFrame extends JFrame implements ActionListener {
     JButton btn;
     boolean isBtnPushed; // ボタンが押されたかどうか
 
+    private MenuBar menuBar;
+    private Menu[] menu;
+    private final String[] menuString = {"Window"};
+    MenuItem[] menuItem;
+    private final String[] menuItemString = {"Create Server", "Create Client"};
+
     public StartFrame () {
         this.setTitle(FRAME_TITLE); // Settting Title
         this.setSize(FRAME_SIZE); // サイズの設定
@@ -36,6 +45,29 @@ public class StartFrame extends JFrame implements ActionListener {
         this.setLocationRelativeTo(null); // 位置を中央に設定
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // ×を押すとプログラムが終了
         this.isBtnPushed = false;
+
+        // Menu bar
+        this.menuBar = new MenuBar();
+
+        // Menu
+        this.menu = new Menu[this.menuString.length];
+        for (int i = 0; i < this.menuString.length; i++) {
+            this.menu[i] = new Menu(menuString[i]);
+        }
+
+        // menu item
+        this.menuItem = new MenuItem[this.menuItemString.length];
+        for (int i = 0; i < this.menuItemString.length; i++) {
+            this.menuItem[i] = new MenuItem(menuItemString[i]);
+            this.menuItem[i].addActionListener(this);
+            this.menu[0].add(this.menuItem[i]);
+        }
+
+        for (int i = 0; i < this.menuString.length; i++) {
+            this.menuBar.add(this.menu[i]);
+        }
+
+        setMenuBar(this.menuBar);
 
         // Setting labels
         this.upperLabel = new JLabel();
@@ -65,10 +97,23 @@ public class StartFrame extends JFrame implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        this.btn.setEnabled(false);
-        this.textField1.setEditable(false);
-        this.textField2.setEditable(false);
-        this.isBtnPushed = true;
+        Object obj = e.getSource();
+        if (obj == this.btn) {
+            this.btn.setEnabled(false);
+            this.textField1.setEditable(false);
+            this.textField2.setEditable(false);
+            this.isBtnPushed = true;
+        } else if (obj == this.menuItem[0]) {
+            PongServer server = new PongServer();
+            if (server.sf != null) {
+                Thread thread = new Thread(server);
+                thread.start();
+            }
+        } else if (obj == this.menuItem[1]) {
+            PongClient client = new PongClient();
+            Thread thread = new Thread(client);
+            thread.start();
+        }
     }
 
     // ログに文字列を表示する
