@@ -42,7 +42,7 @@ final class PongReceiverC implements Runnable {
 
 			try {
 				line = this.bfr.readLine(); // データの受信
-				System.out.println("受信: \"" + line + "\" from " + this.socket.getRemoteSocketAddress());
+				System.out.println("Receive: \"" + line + "\" from " + this.socket.getRemoteSocketAddress());
 			} catch (IOException ioe) {
 				// 異常終了
 				ioe.printStackTrace();
