@@ -21,6 +21,8 @@ public class StartFrameS extends StartFrame implements ActionListener {
         this.pongServer = nps;
         this.isAccept = false;
 
+        this.menuItem[0].setEnabled(false);
+
         // Setting labels
         this.upperLabel.setText("Input Your Name and Number of Players:");
         this.label2.setText("Number of Players:");

@@ -55,6 +55,7 @@ public class StartFrameC extends StartFrame implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
         super.actionPerformed(e);
-        upperLabel.setText("Connecting...");
+        Object obj = e.getSource();
+        if (obj == this.btn) upperLabel.setText("Connecting...");
     }
 }

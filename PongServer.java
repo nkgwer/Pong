@@ -2,11 +2,12 @@ import java.util.StringTokenizer;
 import java.io.IOException;
 import java.net.Socket;
 
-public class PongServer {
+public class PongServer implements Runnable {
 	public static final int PORT = 8080; // ポート番号を設定する．
 	private static final int MIN_PORT = 1024; // 設定できる最小のポート番号
 	private static final int MAX_PORT = 65535; // 設定できる最大のポート番号
 	private static final int INVALID_PORT_NUMBER = -1;
+	private static boolean isServer = false;
 	private boolean isInitialized, isStartFrame, isGameFrame;
 	StartFrameS sf;
 	GameFrameS gf;
@@ -18,41 +19,45 @@ public class PongServer {
 	private PongSenderS[] pongSender;
 	private String[] str;
 
-	PongServer() {
+	public PongServer() {
+		if (isServer) {
+			System.out.println("PongServer already exists.");
+			return;
+		}
+		isServer = true;
 		this.sf = new StartFrameS(this);
 		this.isInitialized = false;
 	}
 
-	public static void main(String[] args) throws Exception {
-		PongServer ps = new PongServer();
-		ps.initialize();
-		ps.waitBtnPushed();
+	public void run() {
+		this.initialize();
+		this.waitBtnPushed();
 
-		ps.usrname = ps.sf.textField1.getText(); // ユーザーネーム
-		ps.Number = Integer.parseInt((String) ps.sf.textField2.getSelectedItem()); // 対戦人数
+		this.usrname = this.sf.textField1.getText(); // user name
+		this.Number = Integer.parseInt((String) this.sf.textField2.getSelectedItem()); // number of players
 
-		// サーバーソケットの作成
-		ps.startServer(args, ps.Number - 1);
-
-		while (ps.sConnector.getNumberOfSocket() < ps.Number - 1) {
+		// create server socket
+		String[] args = new String[0];
+		this.startServer(args, this.Number - 1);
+		while (this.sConnector.getNumberOfSocket() < this.Number - 1) {
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException ire) {
 				// Do Nothing.
 			}
 		}
-		ps.sf.isAccept = false;
+		this.sf.isAccept = false;
 		try {
 			Thread.sleep(100);
 		} catch (InterruptedException ire) {
 			// Do Nothing.
 		}
 		System.out.println("Waiting for " + 0 + " players.");
-		ps.sf.upperLabel.setText("Preparing game...");
-		ps.sf.logAppendln("Preparing game...");
+		this.sf.upperLabel.setText("Preparing game...");
+		this.sf.logAppendln("Preparing game...");
 
-		for (int i = 0; i < ps.Number - 1; i++) {
-			ps.pongSender[i].send("Number of Player: " + ps.Number.toString());
+		for (int i = 0; i < this.Number - 1; i++) {
+			this.pongSender[i].send("Number of Player: " + this.Number.toString());
 		}
 
 		try {
@@ -61,14 +66,14 @@ public class PongServer {
 			// Do Nothing.
 		}
 
-		for (int i = 0; i < ps.Number - 1; i++) {
-			ps.pongSender[i].send("Close Start Frame");
+		for (int i = 0; i < this.Number - 1; i++) {
+			this.pongSender[i].send("Close Start Frame");
 		}
 
-		ps.changeFrameStoG();
+		this.changeFrameStoG();
 
 		// スタートボタンが押されて無効になるまで待つ
-		while (ps.gf.btn.isEnabled()) {
+		while (this.gf.btn.isEnabled()) {
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException ire) {
@@ -76,13 +81,13 @@ public class PongServer {
 			}
 		}
 
-		ps.str = new String[ps.Number - 1];
+		this.str = new String[this.Number - 1];
 
-		while (ps.isGameFrame) {
+		while (this.isGameFrame) {
 			int x = 0, vx = 0, vy = 0;
 
 			// ボールが自分のフィールドから出ない間待つ。
-			while (ps.gf.isBallHere) {
+			while (this.gf.isBallHere) {
 				try {
 					Thread.sleep(10);
 				} catch (InterruptedException ire) {
@@ -90,17 +95,17 @@ public class PongServer {
 				}
 			}
 
-			x = ps.gf.ball.x;
-			vx = ps.gf.ball.getVX();
-			vy = ps.gf.ball.getVY();
+			x = this.gf.ball.x;
+			vx = this.gf.ball.getVX();
+			vy = this.gf.ball.getVY();
 
-			for (int i = 0; i < ps.Number - 1; i++) {
+			for (int i = 0; i < this.Number - 1; i++) {
 				int[] place = new int[3];
 				// 上に行ったボールの位置と速度を送信する。
-				ps.sendPlaceVelocity(i, x, vx, vy);
+				this.sendPlaceVelocity(i, x, vx, vy);
 
-				ps.str[i] = null;
-				while ( ps.str[i] == null ) {
+				this.str[i] = null;
+				while ( this.str[i] == null ) {
 					try {
 						Thread.sleep(10);
 					} catch (InterruptedException ire) {
@@ -108,7 +113,7 @@ public class PongServer {
 					}
 				}
 
-				StringTokenizer st = new StringTokenizer(ps.str[i], " ");
+				StringTokenizer st = new StringTokenizer(this.str[i], " ");
 				for (int j = 0; j < 3; j++) {
 					place[j] = Integer.parseInt(st.nextToken());
 				}
@@ -117,17 +122,124 @@ public class PongServer {
 				vx = place[1];
 				vy = place[2];
 			}
-			ps.gf.ball.setLocation(ps.gf.FRAME_SIZE.width - ps.gf.ball.width - x, 1);
-			ps.gf.ball.setVX(- vx);
-			ps.gf.ball.setVY((int) Math.abs(vy));
-			ps.gf.isBallHere = true;
+			this.gf.ball.setLocation(this.gf.FRAME_SIZE.width - this.gf.ball.width - x, 1);
+			this.gf.ball.setVX(- vx);
+			this.gf.ball.setVY((int) Math.abs(vy));
+			this.gf.isBallHere = true;
 		}
 		System.out.println("closing...");
-		for (int i = 0; i < ps.Number - 1; i++)
-			ps.closeSocketStream(i);
-		ps.sConnector.terminate();
-		// System.exit(0);
+		for (int i = 0; i < this.Number - 1; i++)
+			this.closeSocketStream(i);
+		this.sConnector.terminate();
+
+		isServer = false;
 	}
+
+	// public static void main(String[] args) throws Exception {
+	// 	PongServer ps = new PongServer();
+	// 	ps.initialize();
+	// 	ps.waitBtnPushed();
+
+	// 	ps.usrname = ps.sf.textField1.getText(); // ユーザーネーム
+	// 	ps.Number = Integer.parseInt((String) ps.sf.textField2.getSelectedItem()); // 対戦人数
+
+	// 	// サーバーソケットの作成
+	// 	ps.startServer(args, ps.Number - 1);
+
+	// 	while (ps.sConnector.getNumberOfSocket() < ps.Number - 1) {
+	// 		try {
+	// 			Thread.sleep(10);
+	// 		} catch (InterruptedException ire) {
+	// 			// Do Nothing.
+	// 		}
+	// 	}
+	// 	ps.sf.isAccept = false;
+	// 	try {
+	// 		Thread.sleep(100);
+	// 	} catch (InterruptedException ire) {
+	// 		// Do Nothing.
+	// 	}
+	// 	System.out.println("Waiting for " + 0 + " players.");
+	// 	ps.sf.upperLabel.setText("Preparing game...");
+	// 	ps.sf.logAppendln("Preparing game...");
+
+	// 	for (int i = 0; i < ps.Number - 1; i++) {
+	// 		ps.pongSender[i].send("Number of Player: " + ps.Number.toString());
+	// 	}
+
+	// 	try {
+	// 		Thread.sleep(1000);
+	// 	} catch (InterruptedException ire) {
+	// 		// Do Nothing.
+	// 	}
+
+	// 	for (int i = 0; i < ps.Number - 1; i++) {
+	// 		ps.pongSender[i].send("Close Start Frame");
+	// 	}
+
+	// 	ps.changeFrameStoG();
+
+	// 	// スタートボタンが押されて無効になるまで待つ
+	// 	while (ps.gf.btn.isEnabled()) {
+	// 		try {
+	// 			Thread.sleep(10);
+	// 		} catch (InterruptedException ire) {
+	// 			// Do Nothing.
+	// 		}
+	// 	}
+
+	// 	ps.str = new String[ps.Number - 1];
+
+	// 	while (ps.isGameFrame) {
+	// 		int x = 0, vx = 0, vy = 0;
+
+	// 		// ボールが自分のフィールドから出ない間待つ。
+	// 		while (ps.gf.isBallHere) {
+	// 			try {
+	// 				Thread.sleep(10);
+	// 			} catch (InterruptedException ire) {
+	// 				// Do Nothing.
+	// 			}
+	// 		}
+
+	// 		x = ps.gf.ball.x;
+	// 		vx = ps.gf.ball.getVX();
+	// 		vy = ps.gf.ball.getVY();
+
+	// 		for (int i = 0; i < ps.Number - 1; i++) {
+	// 			int[] place = new int[3];
+	// 			// 上に行ったボールの位置と速度を送信する。
+	// 			ps.sendPlaceVelocity(i, x, vx, vy);
+
+	// 			ps.str[i] = null;
+	// 			while ( ps.str[i] == null ) {
+	// 				try {
+	// 					Thread.sleep(10);
+	// 				} catch (InterruptedException ire) {
+	// 					// Do Nothing.
+	// 				}
+	// 			}
+
+	// 			StringTokenizer st = new StringTokenizer(ps.str[i], " ");
+	// 			for (int j = 0; j < 3; j++) {
+	// 				place[j] = Integer.parseInt(st.nextToken());
+	// 			}
+
+	// 			x = place[0];
+	// 			vx = place[1];
+	// 			vy = place[2];
+	// 		}
+	// 		ps.gf.ball.setLocation(ps.gf.FRAME_SIZE.width - ps.gf.ball.width - x, 1);
+	// 		ps.gf.ball.setVX(- vx);
+	// 		ps.gf.ball.setVY((int) Math.abs(vy));
+	// 		ps.gf.isBallHere = true;
+	// 	}
+	// 	System.out.println("closing...");
+	// 	for (int i = 0; i < ps.Number - 1; i++)
+	// 		ps.closeSocketStream(i);
+	// 	ps.sConnector.terminate();
+	// 	// System.exit(0);
+	// }
 
 	// 初期化
 	public void initialize () {

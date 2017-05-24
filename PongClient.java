@@ -4,7 +4,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public class PongClient {
+public class PongClient implements Runnable{
 	StartFrameC sFrameC;
 	GameFrameC gFrameC;
 	String userName, hostName, sPlayerName;
@@ -19,6 +19,29 @@ public class PongClient {
 		this.sFrameC = new StartFrameC(this);
 		this.isInitialized = false;
 	}
+
+	public void run() {
+		String[] args = new String[0];
+		this.initialize();
+		this.waitBtnPushed();
+
+		this.userName = this.sFrameC.textField1.getText(); // ユーザーネーム
+		this.hostName = this.sFrameC.textField2.getText(); // 10.9.81.128 など
+
+		this.accessServer(args); // サーバーに接続, 受信の設定
+
+		this.pongSender.send("Joined: " + this.userName); // データ送信
+
+		// ゲームフレームに切り替わるまで待つ。
+		while (this.isStartFrame || !this.isGameFrame) {
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException ire) {
+				// Do Nothing.
+			}
+		}
+	}
+
 
 	public static void main(String[] args) throws Exception {
 		PongClient pc = new PongClient();
