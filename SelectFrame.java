@@ -15,9 +15,9 @@ import javax.swing.JPanel;
 
 // 選択画面用クラス
 public class SelectFrame extends JFrame implements ActionListener {
-    /* スタート画面のタイトル */
+    /* 選択画面のタイトル */
     private static final String FRAME_TITLE = "Pong!";
-    /* スタート画面のサイズ */
+    /* 選択画面のサイズ */
     private static final Dimension FRAME_SIZE = new Dimension(640, 360);
     static final Dimension BUTTON_SIZE = new Dimension(300, 300);
 
@@ -103,7 +103,7 @@ public class SelectFrame extends JFrame implements ActionListener {
         this.setVisible(false);
         if (obj == this.btn[0]) {
             PongServer server = new PongServer();
-            if (server.sf != null) {
+            if (server.sFrame != null) {
                 Thread thread = new Thread(server);
                 thread.start();
             }
@@ -113,7 +113,7 @@ public class SelectFrame extends JFrame implements ActionListener {
             thread.start();
         } else if (obj == this.menuItem[0]) {
             PongServer server = new PongServer();
-            if (server.sf != null) {
+            if (server.sFrame != null) {
                 Thread thread = new Thread(server);
                 thread.start();
             }
@@ -123,6 +123,4 @@ public class SelectFrame extends JFrame implements ActionListener {
             thread.start();
         }
     }
-
-
 }

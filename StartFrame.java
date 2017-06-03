@@ -46,6 +46,7 @@ public class StartFrame extends JFrame implements ActionListener {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // ×を押すとプログラムが終了
         this.isBtnPushed = false;
 
+
         // Menu bar
         this.menuBar = new MenuBar();
 
@@ -105,7 +106,7 @@ public class StartFrame extends JFrame implements ActionListener {
             this.isBtnPushed = true;
         } else if (obj == this.menuItem[0]) {
             PongServer server = new PongServer();
-            if (server.sf != null) {
+            if (server.sFrame != null) {
                 Thread thread = new Thread(server);
                 thread.start();
             }

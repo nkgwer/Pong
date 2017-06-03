@@ -4,16 +4,17 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public class PongClient implements Runnable {
+public class PongClient extends PongController implements Runnable {
 	StartFrameC sFrameC;
 	GameFrameC gFrameC;
-	String userName, hostName, sPlayerName;
+	String hostName, sPlayerName;
 	private boolean isInitialized;
+	private boolean isStartFrame;
+	private boolean isGameFrame;
+	
 	private Socket socket;
-	private PongReceiverC pongReceiver;
-	private PongSenderC pongSender;
-	int Number;
-	boolean isStartFrame, isGameFrame;
+	private PongReceiver pongReceiver;
+	private PongSender pongSender;
 
 	PongClient() {
 		this.sFrameC = new StartFrameC(this);
@@ -79,66 +80,6 @@ public class PongClient implements Runnable {
 		// System.exit(0);
 	}
 
-
-	public static void main(String[] args) throws Exception {
-		PongClient pc = new PongClient();
-		pc.initialize();
-		pc.waitBtnPushed();
-
-		pc.userName = pc.sFrameC.textField1.getText(); // ユーザーネーム
-		pc.hostName = pc.sFrameC.textField2.getText(); // 10.9.81.128 など
-
-		pc.accessServer(args); // サーバーに接続, 受信の設定
-
-		pc.pongSender.send("Joined: " + pc.userName); // データ送信
-
-		// ゲームフレームに切り替わるまで待つ。
-		while (pc.isStartFrame || !pc.isGameFrame) {
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException ire) {
-				// Do Nothing.
-			}
-		}
-
-		while (pc.isGameFrame) {
-			// ボールが自分のフィールドに来るまで待つ。
-			while (!pc.gFrameC.isBallHere) {
-				try {
-					Thread.sleep(10);
-				} catch (InterruptedException ire) {
-					// Do Nothing.
-				}
-			}
-
-			// ボールが自分のフィールドから出ない間待つ。
-			while (pc.gFrameC.isBallHere) {
-				try {
-					Thread.sleep(10);
-				} catch (InterruptedException ire) {
-					// Do Nothing.
-				}
-			}
-
-			// サーバーに、上に行ったボールの位置と速度を送信する。
-			pc.pongSender.send(pc.gFrameC.ball.x + " " + pc.gFrameC.ball.getVX() + " " + pc.gFrameC.ball.getVY());
-		}
-
-		pc.pongSender.send("END");
-
-		try {
-			if (pc.socket != null) {
-				System.out.println("closing...");
-				pc.socket.close();
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		System.out.println("Closed: " + pc.socket.getRemoteSocketAddress());
-		// pc.sf.setVisible(false);
-		// System.exit(0);
-	}
-
 	public void initialize () {
 		if (this.isInitialized) {
 			return;
@@ -198,7 +139,7 @@ public class PongClient implements Runnable {
 
 		// 受信の設定
 		try {
-			this.pongReceiver = PongReceiverC.createReceiver(this, this.socket);
+			this.pongReceiver = PongReceiver.createReceiver(this, this.socket);
 		} catch (IOException ioe) {
 			String msg = "Failed setting receiver.";
 			System.err.println(msg);
@@ -211,7 +152,7 @@ public class PongClient implements Runnable {
 
 		// 送信の設定
 		try {
-			this.pongSender = PongSenderC.createSender(this, this.socket);
+			this.pongSender = PongSender.createSender(this, this.socket);
 		} catch (IOException ioe) {
 			String msg = "Failed setting sender.";
 			System.err.println(msg);
@@ -225,11 +166,11 @@ public class PongClient implements Runnable {
 	}
 
 	// pongReceiverで受信した文字列に対する処理
-	public synchronized void receive(String s) {
+	public synchronized void receive(String s, int ri) {
 		if (this.isStartFrame) {
 			if (s.startsWith("Number of Player: ")) {
-				this.Number = Integer.parseInt(s.replaceFirst("Number of Player: ", ""));
-				System.out.println("Number of players: " + this.Number + "人");
+				this.number = Integer.parseInt(s.replaceFirst("Number of Player: ", ""));
+				System.out.println("Number of players: " + this.number + "人");
 			} else if (s.startsWith("Server's Name: ")) {
 				String str = s.replaceFirst("Server's Name: ", "");
 				this.sPlayerName = str;
@@ -254,7 +195,7 @@ public class PongClient implements Runnable {
 		}
 	}
 
-	public synchronized void terminateConnection () {
+	public synchronized void terminateConnection(int i) {
 		this.closeSocketStream();
 	}
 
@@ -284,6 +225,7 @@ public class PongClient implements Runnable {
 		}
 	}
 
+	// スタート画面を閉じてゲーム画面を開く
 	private void changeFrameStoG () {
 		this.gFrameC = new GameFrameC();
 		System.out.println("Closing: Start Frame");
