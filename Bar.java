@@ -16,7 +16,6 @@ public class Bar extends Rectangle {
 	}
 
 	public void setV (int nwidth, int nheight) {
-
 		v.width = nwidth;
 		v.height = nheight;
 	}
